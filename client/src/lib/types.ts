@@ -11,3 +11,9 @@ export interface Product {
 export interface ApiResponse {
   [category: string]: Product[];
 }
+
+export interface ResultsDisplayProps {
+  results: ApiResponse | null;
+  isLoading: boolean;
+  imagePreview: string | null;
+}

@@ -3,11 +3,16 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { ResultsDisplay } from '@/components/ResultsDisplay';
 import { Toaster, toast } from 'sonner';
 import type { ApiResponse } from './lib/types';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+import type { ResultsDisplayProps } from './lib/types';
+
 
 
 function App() {
   const [results, setResults] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleSearch = async (file: File) => {
     if (!file) {
@@ -28,12 +33,13 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Network response was not ok');
       }
 
-      const data = await response.json();
+      const data: ApiResponse = await response.json();
       
-      if (Object.keys(data).length === 0 || (data.message && Object.keys(data).length === 1)) {
+      if (Object.keys(data).length === 0) {
         setResults({}); // Set to empty object to indicate "not found"
         toast.info('No clothing items could be detected in the image.');
       } else {
@@ -41,36 +47,37 @@ function App() {
         toast.success('Found some stylish matches for you!');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching results:', error);
-      toast.error('Something went wrong. Please try another image.');
+      toast.error(error.message || 'Something went wrong. Please try another image.');
       setResults(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="min-h-screen w-full bg-background text-foreground">
-        <header className="flex items-center justify-center p-4 border-b border-gray-800">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Style Scout
-          </h1>
-        </header>
-        <main className="container mx-auto p-4 md:p-8">
-          <div className="max-w-2xl mx-auto flex flex-col items-center text-center">
-            <p className="text-lg text-muted-foreground mb-8">
-              See an outfit you love? Upload a photo, and let our AI find similar styles for you to shop instantly.
-            </p>
-            <ImageUploader onSearch={handleSearch} isLoading={isLoading} />
-          </div>
-          <div className="mt-12">
-            <ResultsDisplay results={results} isLoading={isLoading} />
+      <div className="min-h-screen w-full bg-background text-foreground flex flex-col">
+        <Navbar />
+        <main className="flex-grow container mx-auto p-4 md:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+                Snap, Scout, Shop.
+              </h1>
+              <p className="text-lg text-muted-foreground mb-8 max-w-md">
+                See an outfit you love? Upload a photo, and let our AI find similar styles for you to shop instantly.
+              </p>
+              <ImageUploader onSearch={handleSearch} isLoading={isLoading} setImagePreview={setImagePreview} />
+            </div>
+            <div>
+              <ResultsDisplay results={results} isLoading={isLoading} imagePreview={imagePreview} />
+            </div>
           </div>
         </main>
+        <Footer />
       </div>
     </>
   );
